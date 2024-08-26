@@ -19,7 +19,7 @@ class Inference(nn.Module):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         # loading decomposition model 
         self.model_Decom_low = Decom().to(self.device)
-        self.model_Decom_low = load_initialize(self.model_Decom_low, self.opts.Decom_model_low_path, self.device)
+        self.model_Decom_low = load_initialize(self.model_Decom_low, self.opts.Decom_model_low_path)  # Device handled in load_initialize
         # loading R, old_model_opts, and L model
         self.unfolding_opts, self.model_R, self.model_L = load_unfolding(self.opts.unfolding_model_path, self.device)
         # loading adjustment model
@@ -88,7 +88,6 @@ if __name__ == "__main__":
     for k, v in vars(opts).items():
         print(k, v)
     
-    # Set the CUDA device (if CUDA is available)
     if torch.cuda.is_available():
         os.environ['CUDA_VISIBLE_DEVICES'] = str(opts.gpu_id)
     
