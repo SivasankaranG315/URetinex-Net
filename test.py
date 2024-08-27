@@ -21,7 +21,7 @@ class Inference(nn.Module):
         self.model_Decom_low = Decom().to(self.device)
         self.model_Decom_low = load_initialize(self.model_Decom_low, self.opts.Decom_model_low_path)  # Device handled in load_initialize
         # loading R, old_model_opts, and L model
-        self.unfolding_opts, self.model_R, self.model_L = load_unfolding(self.opts.unfolding_model_path, self.device)
+        self.unfolding_opts, self.model_R, self.model_L = load_unfolding(self.opts.unfolding_model_path)
         # loading adjustment model
         self.adjust_model = load_adjustment(self.opts.adjust_model_path).to(self.device)
         self.P = P().to(self.device)
