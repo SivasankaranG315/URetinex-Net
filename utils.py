@@ -12,7 +12,7 @@ def save_TensorImg(img_tensor, path, nrow=1):
 
 def np_save_TensorImg(img_tensor, path):
     img = np.squeeze(img_tensor.cpu().permute(0, 2, 3, 1).numpy())
-    im = Image.fromarray(np.clip(img*255, 0, 255.0).astype('uint8'))
+    im = Image.fromarray(np.clip(img * 255, 0, 255.0).astype('uint8'))
     im.save(path, 'png')
 
 def define_modelR(opts):
@@ -33,23 +33,23 @@ def define_modelA(opts):
         model_A = Adjust_naive(opts)
     return model_A
 
-
-
 def load_initialize(model, decom_model_path):
     if os.path.exists(decom_model_path):
-        checkpoint_Decom_low = torch.load(decom_model_path)
+        # Load model onto CPU
+        checkpoint_Decom_low = torch.load(decom_model_path, map_location=torch.device('cpu'))
         model.load_state_dict(checkpoint_Decom_low['state_dict']['model_R'])
-        # to freeze the params of Decomposition Model
+        # Freeze the params of Decomposition Model
         for param in model.parameters():
-            param.requires_grad = False   
+            param.requires_grad = False
         return model
     else:
-        print("pretrained Initialize Model does not exist, check ---> %s " % decom_model_path)
+        print("Pretrained Initialize Model does not exist, check ---> %s " % decom_model_path)
         exit()
 
 def load_unfolding(unfolding_model_path):
     if os.path.exists(unfolding_model_path):
-        checkpoint = torch.load(unfolding_model_path)
+        # Load model onto CPU
+        checkpoint = torch.load(unfolding_model_path, map_location=torch.device('cpu'))
         old_opts = checkpoint["opts"]
         model_R = define_modelR(old_opts)
         model_L = define_modelL(old_opts)
@@ -61,38 +61,31 @@ def load_unfolding(unfolding_model_path):
             param_L.requires_grad = False
         return old_opts, model_R, model_L
     else:
-        print("pretrained Unfolding Model does not exist, check ---> %s"%unfolding_model_path)
+        print("Pretrained Unfolding Model does not exist, check ---> %s" % unfolding_model_path)
         exit()
 
 def load_adjustment(adjust_model_path):
     if os.path.exists(adjust_model_path):
-        checkpoint_Adjust = torch.load(adjust_model_path)
+        # Load model onto CPU
+        checkpoint_Adjust = torch.load(adjust_model_path, map_location=torch.device('cpu'))
         model_A = define_modelA(checkpoint_Adjust['opts'])
         model_A.load_state_dict(checkpoint_Adjust['state_dict']['model_A'])
-        print(" ===========>  loading pretrained Illumination Adjustment Model from: %s " % adjust_model_path)
-        # to freeze the params of Decomposition Model
+        print("===========>  Loading pretrained Illumination Adjustment Model from: %s " % adjust_model_path)
+        # Freeze the params of Adjustment Model
         for param in model_A.parameters():
-            param.requires_grad = False       
+            param.requires_grad = False
         return model_A
     else:
-        print("pretrained Adjustment Model does not exist, check ---> %s"%adjust_model_path)
+        print("Pretrained Adjustment Model does not exist, check ---> %s" % adjust_model_path)
         exit()
-    
 
-        
-
-def param_all(model,  net_input):
+def param_all(model, net_input):
     import torchsummary
     shape = net_input.shape
     torchsummary.summary(model, (shape[1], shape[2], shape[3]))
 
 def param_self_compute(model):
-    parmas = 0
+    params = 0
     for p in model.parameters():
-        #print(p)
-        parmas += p.numel()
-    return parmas
-
-
-
-
+        params += p.numel()
+    return params
