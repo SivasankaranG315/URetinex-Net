@@ -49,7 +49,7 @@ class Inference(nn.Module):
             L = self.model_L(l=Q)
         return R, L
     
-    def lllumination_adjust(self, L, ratio):
+    def illumination_adjust(self, L, ratio):
         ratio = torch.ones(L.shape).to(self.device) * self.opts.ratio
         return self.adjust_model(l=L, alpha=ratio)
     
@@ -57,7 +57,7 @@ class Inference(nn.Module):
         with torch.no_grad():
             start = time.time()  
             R, L = self.unfolding(input_low_img)
-            High_L = self.lllumination_adjust(L, self.opts.ratio)
+            High_L = self.illumination_adjust(L, self.opts.ratio)
             I_enhance = High_L * R
             p_time = (time.time() - start)
         return I_enhance, p_time
@@ -69,27 +69,33 @@ class Inference(nn.Module):
         enhance, p_time = self.forward(input_low_img=low_img)
         if not os.path.exists(self.opts.output):
             os.makedirs(self.opts.output)
-        save_path = os.path.join(self.opts.output, file_name.replace(name, "%s_%d_URetinexNet"%(name, self.opts.ratio)))
+        save_path = os.path.join(self.opts.output, file_name.replace(name, f"{name}_{self.opts.ratio}_URetinexNet"))
         np_save_TensorImg(enhance.cpu(), save_path)  
-        print("================================= time for %s: %f============================"%(file_name, p_time))
+        print(f"================================= time for {file_name}: {p_time:.6f} seconds ============================")
 
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Configure')
-    parser.add_argument('--img_path', type=str, default="./demo/input/3.png")
-    parser.add_argument('--output', type=str, default="/content/demo")
-    parser.add_argument('--ratio', type=int, default=5)
-    parser.add_argument('--Decom_model_low_path', type=str, default="./ckpt/init_low.pth")
-    parser.add_argument('--unfolding_model_path', type=str, default="./ckpt/unfolding.pth")
-    parser.add_argument('--adjust_model_path', type=str, default="./ckpt/L_adjust.pth")
+    
+    # Paths: Modify these to match the structure on Google Colab
+    parser.add_argument('--img_path', type=str, default="/content/demo/input/image.png")  # Input image path
+    parser.add_argument('--output', type=str, default="/content/demo/output")  # Output directory
+    parser.add_argument('--ratio', type=int, default=5)  # Ratio for illumination adjustment
+    parser.add_argument('--Decom_model_low_path', type=str, default="./ckpt/init_low.pth")  # Decomposition model
+    parser.add_argument('--unfolding_model_path', type=str, default="./ckpt/unfolding.pth")  # Unfolding model
+    parser.add_argument('--adjust_model_path', type=str, default="./ckpt/L_adjust.pth")  # Adjustment model
     parser.add_argument('--gpu_id', type=int, default=0)
     
     opts = parser.parse_args()
-    for k, v in vars(opts).items():
-        print(k, v)
     
+    # Print all arguments
+    for k, v in vars(opts).items():
+        print(f"{k}: {v}")
+    
+    # Set GPU for PyTorch if available
     if torch.cuda.is_available():
         os.environ['CUDA_VISIBLE_DEVICES'] = str(opts.gpu_id)
     
+    # Run the inference
     model = Inference(opts)
     model.run(opts.img_path)
